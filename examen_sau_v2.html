@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen Écrit — Université de San Andreas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --gold:       #C9A84C;
+    --gold-dim:   #8A6E2F;
+    --deep:       #0D0F14;
+    --surface:    #13161E;
+    --panel:      #1A1E2A;
+    --border:     #252A38;
+    --text:       #E8EAF0;
+    --muted:      #7A8099;
+    --danger:     #E05252;
+    --danger-dim: #6B2222;
+    --success:    #4CAF82;
+    --radius:     6px;
+    --timer-ok:   #4CAF82;
+    --timer-warn: #E0A852;
+    --timer-crit: #E05252;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--deep);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  #timer-box { display: flex; align-items: center; gap: 0.5rem; }
+  #timer-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  #timer-display {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--timer-ok);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s;
+  }
+  #timer-display.warn { color: var(--timer-warn); }
+  #timer-display.crit { color: var(--timer-crit); animation: pulse 0.8s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap { height: 3px; background: var(--border); }
+  .progress-bar-fill { height: 100%; background: var(--gold); transition: width 0.4s ease; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 2rem; }
+  .page-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); margin-bottom: 0.4rem; }
+  .page-title { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--text); font-weight: 600; }
+  .page-subtitle { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  /* ── INSTRUCTIONS ── */
+  .instructions-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .instructions-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    line-height: 1.5;
+  }
+  .instructions-list li .bullet {
+    color: var(--gold);
+    font-weight: 700;
+    min-width: 16px;
+    margin-top: 2px;
+  }
+  .instr-highlight {
+    border-color: var(--gold-dim) !important;
+    background: rgba(201,168,76,0.07) !important;
+  }
+  .instr-highlight strong { color: var(--gold); }
+
+  /* ── FIELDS ── */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .field-grid .full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+  .field input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.65rem 0.9rem;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .field input:focus { border-color: var(--gold); }
+  .field input.error { border-color: var(--danger); }
+  .field-error { font-size: 0.72rem; color: var(--danger); margin-top: 0.3rem; display: none; }
+
+  /* ── QCM ── */
+  .question-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  .question-block:focus-within { border-color: var(--gold-dim); }
+  .question-num { font-size: 0.68rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  .question-text { font-size: 0.95rem; font-weight: 500; margin-bottom: 1rem; line-height: 1.5; }
+  .choices { display: flex; flex-direction: column; gap: 0.5rem; }
+  .choice-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+  .choice-label:hover { background: rgba(201,168,76,0.07); border-color: var(--border); }
+  .choice-label.selected { background: rgba(201,168,76,0.12); border-color: var(--gold-dim); }
+  .choice-marker {
+    width: 20px; height: 20px; min-width: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .choice-label.selected .choice-marker { border-color: var(--gold); background: var(--gold); }
+  .choice-marker::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--deep); display: none; }
+  .choice-label.selected .choice-marker::after { display: block; }
+
+  /* ── NAV ── */
+  .nav-row { display: flex; align-items: center; justify-content: space-between; margin-top: 2rem; gap: 1rem; }
+  .nav-hint { font-size: 0.78rem; color: var(--muted); }
+  .btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.65rem 1.5rem;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    text-transform: uppercase;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: var(--gold); color: var(--deep); }
+  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--gold-dim); color: var(--text); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover:not(:disabled) { opacity: 0.88; }
+
+  /* ── RECAP ── */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0 1.5rem; }
+  .summary-item { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1rem; }
+  .summary-item-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.2rem; }
+  .summary-item-value { font-size: 0.88rem; font-weight: 500; }
+  .summary-item-value.missing { color: var(--danger); font-style: italic; }
+  .warning-box {
+    background: rgba(224,82,82,0.08);
+    border: 1px solid var(--danger-dim);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    color: #E8B4B4;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+  .section-recap-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 0.6rem; margin-top: 1.25rem; }
+
+  /* ── PROCTOR OVERLAY ── */
+  #proctor-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.80);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  #proctor-overlay.show { display: flex; }
+  .proctor-card {
+    background: var(--surface);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 2rem; max-width: 420px; text-align: center;
+  }
+  .proctor-card h2 { font-family: 'Cinzel', serif; color: var(--danger); margin-bottom: 0.75rem; font-size: 1.2rem; }
+  .proctor-card p { color: var(--muted); font-size: 0.88rem; margin-bottom: 1.5rem; }
+
+  /* ── ALERT 2 MIN ── */
+  #alert-2min {
+    display: none;
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--timer-warn);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    color: var(--timer-warn);
+    z-index: 150;
+    max-width: 280px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ── PAGE SENT ── */
+  #page-sent { text-align: center; padding: 3rem 1rem; }
+  #page-sent .sent-icon { font-size: 3rem; margin-bottom: 1rem; }
+  #page-sent h2 { font-family: 'Cinzel', serif; color: var(--gold); margin-bottom: 0.5rem; }
+  #page-sent p { color: var(--muted); font-size: 0.88rem; }
+
+  @media (max-width: 600px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .nav-row { flex-direction: column; align-items: stretch; }
+    .nav-hint { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-brand">Université de San Andreas · Mastère de Droit</div>
+  <div id="timer-box">
+    <span id="timer-label">Temps restant</span>
+    <span id="timer-display">20:00</span>
+  </div>
+</header>
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="progress-bar" style="width:16.66%"></div>
+</div>
+
+<!-- PROCTOR OVERLAY -->
+<div id="proctor-overlay">
+  <div class="proctor-card">
+    <h2>⚠️ Sortie détectée</h2>
+    <p>Vous avez quitté la fenêtre d'examen. Cet événement a été enregistré et sera transmis à votre correcteur avec l'heure et la durée de la sortie.</p>
+    <button class="btn btn-primary" onclick="dismissProctor()">Reprendre l'examen</button>
+  </div>
+</div>
+
+<!-- ALERT 2 MIN -->
+<div id="alert-2min">
+  ⏱ Il vous reste <strong>2 minutes</strong>. Votre copie sera soumise automatiquement à l'expiration du délai.
+</div>
+
+<div class="container">
+
+  <!-- PAGE 0 — INSTRUCTIONS -->
+  <div class="page active" id="page-0">
+    <div class="page-header">
+      <div class="page-eyebrow">Avant de commencer</div>
+      <div class="page-title">Instructions de l'examen</div>
+      <div class="page-subtitle">Lisez attentivement les instructions ci-dessous avant de débuter.</div>
+    </div>
+    <div class="divider"></div>
+    <ul class="instructions-list">
+      <li><span class="bullet">·</span><span>Répondez à toutes les questions.</span></li>
+      <li><span class="bullet">·</span><span>L'examen consiste en <strong>20 questions</strong>.</span></li>
+      <li><span class="bullet">·</span><span><strong>5 questions</strong> sont attribuées pour chaque matière.</span></li>
+      <li><span class="bullet">·</span><span>Chaque question n'a qu'<strong>une seule réponse correcte</strong> sur les 4 réponses proposées.</span></li>
+      <li><span class="bullet">·</span><span>Chaque question vaut <strong>1 point</strong>.</span></li>
+      <li><span class="bullet">·</span><span>Le silence absolu doit être respecté pendant l'examen.</span></li>
+      <li><span class="bullet">·</span><span><strong>Aucun document</strong> n'est autorisé pendant l'examen.</span></li>
+      <li><span class="bullet">·</span><span>Aucune question ne peut être posée pendant l'examen.</span></li>
+      <li class="instr-highlight"><span class="bullet">·</span><span>L'examen dure <strong>00h20</strong>. Toute copie rendue après ce délai sera notée <strong>0/20</strong>.</span></li>
+      <li><span class="bullet">·</span><span>Vous pourrez quitter la salle d'examen dès que vous aurez rendu votre copie.</span></li>
+      <li class="instr-highlight"><span class="bullet">·</span><span>La réussite du cursus est conditionnée à l'obtention d'une <strong>MOYENNE GÉNÉRALE supérieure ou égale à 10/20</strong>.</span></li>
+      <li><span class="bullet">·</span><span>L'examen comporte <strong>5 pages</strong>. La première page comprend vos informations personnelles. Vous pouvez revenir en arrière tant que vos réponses ne sont pas envoyées.</span></li>
+    </ul>
+    <div class="nav-row">
+      <span class="nav-hint">Page 1 sur 6</span>
+      <button class="btn btn-primary" onclick="goPage(1)">J'ai lu les instructions →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 1 — INFORMATIONS -->
+  <div class="page" id="page-1">
+    <div class="page-header">
+      <div class="page-eyebrow">Identification</div>
+      <div class="page-title">Informations du candidat</div>
+      <div class="page-subtitle">Le chronomètre démarrera à la page suivante.</div>
+    </div>
+    <div class="divider"></div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Prénom *</label>
+        <input type="text" id="f-prenom" placeholder="Votre prénom">
+        <div class="field-error" id="err-prenom">Ce champ est obligatoire.</div>
+      </div>
+      <div class="field">
+        <label>Nom *</label>
+        <input type="text" id="f-nom" placeholder="Votre nom">
+        <div class="field-error" id="err-nom">Ce champ est obligatoire.</div>
+      </div>
+      <div class="field">
+        <label>Date de naissance *</label>
+        <input type="text" id="f-ddn" placeholder="JJ/MM/AAAA">
+        <div class="field-error" id="err-ddn">Ce champ est obligatoire.</div>
+      </div>
+      <div class="field">
+        <label>Lieu de naissance *</label>
+        <input type="text" id="f-lieu" placeholder="Ville, Pays">
+        <div class="field-error" id="err-lieu">Ce champ est obligatoire.</div>
+      </div>
+      <div class="field">
+        <label>Identifiant Discord *</label>
+        <input type="text" id="f-discord" placeholder="123456789012345678">
+        <div class="field-error" id="err-discord">Ce champ est obligatoire.</div>
+      </div>
+      <div class="field">
+        <label>Identifiant unique *</label>
+        <input type="text" id="f-uid" placeholder="Ex : 103640">
+        <div class="field-error" id="err-uid">Ce champ est obligatoire.</div>
+      </div>
+      <div class="field full">
+        <label>Signature *</label>
+        <input type="text" id="f-signature" placeholder="Prénom NOM ou initiales habituelles">
+        <div class="field-error" id="err-signature">Ce champ est obligatoire.</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goPage(0)">← Retour</button>
+      <span class="nav-hint">Page 2 sur 6</span>
+      <button class="btn btn-primary" onclick="startExam()">Commencer l'examen →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2 — SECTION 1 -->
+  <div class="page" id="page-2">
+    <div class="page-header">
+      <div class="page-eyebrow">Section 1 · Questions 1 à 5</div>
+      <div class="page-title" id="title-s1">⚖️ Fondements Juridiques</div>
+    </div>
+    <div id="questions-s1"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goPage(1)">← Retour</button>
+      <span class="nav-hint">Page 3 sur 6</span>
+      <button class="btn btn-primary" onclick="goPage(3)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3 — SECTION 2 -->
+  <div class="page" id="page-3">
+    <div class="page-header">
+      <div class="page-eyebrow">Section 2 · Questions 6 à 10</div>
+      <div class="page-title" id="title-s2">📝 Droit des Contrats</div>
+    </div>
+    <div id="questions-s2"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goPage(2)">← Retour</button>
+      <span class="nav-hint">Page 4 sur 6</span>
+      <button class="btn btn-primary" onclick="goPage(4)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 4 — SECTION 3 -->
+  <div class="page" id="page-4">
+    <div class="page-header">
+      <div class="page-eyebrow">Section 3 · Questions 11 à 15</div>
+      <div class="page-title" id="title-s3">👮 Droit Pénal Général</div>
+    </div>
+    <div id="questions-s3"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goPage(3)">← Retour</button>
+      <span class="nav-hint">Page 5 sur 6</span>
+      <button class="btn btn-primary" onclick="goPage(5)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 5 — SECTION 4 -->
+  <div class="page" id="page-5">
+    <div class="page-header">
+      <div class="page-eyebrow">Section 4 · Questions 16 à 20</div>
+      <div class="page-title" id="title-s4">🧑‍⚖️ Droit Pénal Spécial</div>
+    </div>
+    <div id="questions-s4"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goPage(4)">← Retour</button>
+      <span class="nav-hint">Page 6 sur 6</span>
+      <button class="btn btn-primary" onclick="goPage(6)">Récapitulatif →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 6 — RÉCAPITULATIF -->
+  <div class="page" id="page-6">
+    <div class="page-header">
+      <div class="page-eyebrow">Récapitulatif</div>
+      <div class="page-title">Vérification avant envoi</div>
+      <div class="page-subtitle">Relisez vos réponses. Vous pouvez revenir en arrière pour les modifier.</div>
+    </div>
+    <div class="warning-box" id="warn-unanswered">
+      ⚠ Certaines questions n'ont pas reçu de réponse. Elles seront comptées comme incorrectes.
+    </div>
+    <div id="recap-content"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goPage(5)">← Retour</button>
+      <button class="btn btn-danger" id="btn-submit" onclick="submitExam(false)">Remettre ma copie</button>
+    </div>
+  </div>
+
+  <!-- PAGE ENVOYÉ -->
+  <div id="page-sent" style="display:none;">
+    <div class="sent-icon">✅</div>
+    <h2>Copie remise</h2>
+    <p>Votre examen a bien été transmis. Vous pouvez fermer cette fenêtre.</p>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DONNÉES DES SUJETS
+// ══════════════════════════════════════════════════════════════
+
+const SUJETS = {
+  1: {
+    webhookKey:    "examen_f1",
+    nomExamen:     "Examen Écrit - Sujet 1",
+    bonnesReponses: [2, 3, 3, 2, 3, 2, 4, 4, 1, 1, 2, 2, 1, 3, 4, 1, 2, 1, 4, 3],
+    sections: ["⚖️ Fondements Juridiques","📝 Droit des Contrats","👮 Droit Pénal Général","🧑‍⚖️ Droit Pénal Spécial"],
+    questions: [
+      // Section 1 — Fondements Juridiques
+      { q: "Le métier de greffier consiste à :", c: ["Attester de la légalité des contrats.","Enregistrer tous les actes de la cour.","Transmettre les actes de poursuites pénales au procureur.","Assister les avocats dans la préparation d'une défense au pénal."] },
+      { q: "Dans la théorie de Hans Kelsen, le bloc de légalité se trouve :", c: ["Au-dessus du bloc de constitutionnalité.","Entre le bloc de constitutionnalité et le bloc de conventionnalité.","Entre le bloc de conventionnalité et le bloc réglementaire.","En-dessous du bloc réglementaire."] },
+      { q: "L'institution qui rédige la loi est :", c: ["Le Gouvernement","L'administration","Le Sénat","Le Department of Justice"] },
+      { q: "La juridiction traitant les comparutions immédiates est :", c: ["Le tribunal de police","Le tribunal correctionnel","La Cour criminelle","Le Conseil d'Etat"] },
+      { q: "La procédure qui supprime le casier judiciaire s'appelle :", c: ["Le redressement","La suppression de casier judiciaire","La réhabilitation","Le droit à l'oubli"] },
+      // Section 2 — Droit des Contrats
+      { q: "Un contrat est formé :", c: ["Par sa rédaction","Par la seule rencontre des volontés","Au dépôt du contrat auprès du Gouvernement","Par la signature par les parties du contrat écrit"] },
+      { q: "La liberté contractuelle c'est :", c: ["La liberté d'exécuter ou non le contrat conclu","La liberté de penser","La liberté de rompre le contrat à tout moment","La liberté de contracter ou non"] },
+      { q: "Rédiger un contrat est utile pour :", c: ["Ne pas oublier son existence","Payer ses impôts","Pouvoir aller au delà de ce que permet la loi","Prouver son contenu"] },
+      { q: "On appelle une clause qui ne peut apparaître qu'en droit public :", c: ["Une clause exorbitante de droit commun","Une clause de non concurrence","Une clause publique","Une clause de loyauté"] },
+      { q: "Lorsque l'autre cocontractant n'exécute pas son obligation, on peut soulever :", c: ["L'exception d'inexécution","La clause exorbitante de droit commun","L'irrégularité du contrat","L'irrecevabilité de l'action du cocontractant"] },
+      // Section 3 — Droit Pénal Général
+      { q: "La loi pénale est d'interprétation stricte. Cela signifie :", c: ["Qu'il faut l'appliquer sévèrement","Qu'il ne faut rien extrapoler du texte","Qu'il faut trouver la définition de ses termes dans le code","Que l'on peut ignorer l'un des éléments constitutifs de l'infraction"] },
+      { q: "La loi détermine :", c: ["Les délits uniquement","Les crimes et les délits","Les crimes uniquement","Les crimes, délits et contraventions"] },
+      { q: "Une infraction est composée :", c: ["Des éléments légal, matériel et moral","Des éléments primaires, secondaires et tertiaires","Des éléments essentiels, optionnels et superficiels","Des éléments qualificatifs, aggravants et atténuants"] },
+      { q: "La loi pénale créant une infraction n'est pas rétroactive sauf :", c: ["S'il ne s'agit pas d'une loi pénale","S'il ne s'agit pas d'une loi","S'il s'agit d'une peine moins sévère que celle en cours d'exécution","S'il s'agit d'une peine plus sévère que celle en cours d'exécution"] },
+      { q: "Par principe, sont responsables pénalement :", c: ["Les personnes physiques","Les personnes morales","Les personnes physiques et les personnes morales","Les personnes physiques et les personnes morales, à l'exclusion de l'Etat"] },
+      // Section 4 — Droit Pénal Spécial
+      { q: "L'assassinat se distingue du meurtre par :", c: ["L'élément matériel de l'infraction","L'élément moral de l'infraction","Le résultat de l'infraction","Les personnes impliquées par l'infraction"] },
+      { q: "L'homicide involontaire se distingue du meurtre par :", c: ["L'élément matériel de l'infraction","L'élément moral de l'infraction","Le résultat de l'infraction","Les personnes impliquées par l'infraction"] },
+      { q: "L'extorsion se distingue du vol par :", c: ["L'usage de violences, menaces ou voies de fait","L'usage d'une arme","L'objet de l'infraction","L'élément moral de l'infraction"] },
+      { q: "Un attroupement est :", c: ["Un rassemblement sur la voie publique qui a été autorisé","Un rassemblement sur la voie publique qui n'a pas été autorisé","Un rassemblement sur la voie publique qui trouble l'ordre public","Un rassemblement sur la voie publique susceptible de troubler l'ordre public"] },
+      { q: "Dans une audience pénale, sont présents :", c: ["Le juge et le procureur","Le procureur et l'avocat","Le magistrat du siège, le ministère public et la défense","L'avocat et son client"] }
+    ]
+  },
+  2: {
+    webhookKey:    "examen_f2",
+    nomExamen:     "Examen Écrit - Sujet 2",
+    bonnesReponses: [3, 4, 4, 1, 2, 4, 2, 3, 4, 4, 3, 1, 3, 4, 2, 3, 4, 3, 3, 4],
+    sections: ["⚖️ Fondements Juridiques","📝 Droit des Contrats","👮 Droit Pénal Général","🧑‍⚖️ Droit Pénal Spécial"],
+    questions: [
+      // Section 1 — Fondements Juridiques
+      { q: "Le procureur est parfois appelé :", c: ["Agent spécial","Adjoint","Avocat général","Auxiliaire de justice"] },
+      { q: "Dans la théorie de Hans Kelsen, le bloc réglementaire se trouve :", c: ["Au-dessus du bloc de constitutionnalité.","Entre le bloc de constitutionnalité et le bloc de conventionnalité.","Entre le bloc de conventionnalité et le bloc législatif.","En-dessous du bloc de légalité."] },
+      { q: "L'institution qui interprète la loi est :", c: ["Le Gouvernement","L'administration","Le Sénat","Le Department of Justice"] },
+      { q: "La juridiction traitant les contraventions est :", c: ["Le tribunal de police","Le tribunal correctionnel","La Cour criminelle","Le Conseil d'Etat"] },
+      { q: "En matière administrative, la juridiction compétente est :", c: ["La Cour criminelle","Le Conseil d'Etat","Le Gouvernement","Le tribunal correctionnel"] },
+      // Section 2 — Droit des Contrats
+      { q: "Le consensualisme contractuel se définit :", c: ["Par l'obligation de rédiger tout contrat","Par l'obligation de déposer un contrat auprès du Gouvernement","Par le besoin de signer le contrat écrit","Par le seul besoin de la rencontre des volontés des cocontractants"] },
+      { q: "L'atteinte à la liberté contractuelle est sanctionnée :", c: ["Pénalement","Par la nullité","Par la résiliation","Par l'abrogation"] },
+      { q: "Il est parfois nécessaire de rédiger un contrat si :", c: ["Le Gouvernement le demande","Les cocontractants ne sont pas d'accord","La loi l'exige","On nous le conseille"] },
+      { q: "Une clause de réserve de propriété permet :", c: ["A l'acquéreur de jamais avoir à restituer le bien acheté","A l'acquéreur de restituer le bien acheté s'il n'en est pas satisfait","Au vendeur de récupérer le bien à tout moment","Au vendeur de revendiquer le bien en cas de non paiement du prix"] },
+      { q: "Lorsqu'un événement irrésistible, imprévisible et extérieur aux parties empêche l'exécution du contrat, on parle :", c: ["D'exception d'inexécution","De clause exorbitante de droit commun","D'irrégularité du contrat","De cas de force majeure"] },
+      // Section 3 — Droit Pénal Général
+      { q: "La présomption d'innocence s'applique :", c: ["Jusqu'à la mise en mouvement de l'action publique","Jusqu'à la mise en examen","Jusqu'à condamnation définitive","Sauf lorsque les faits sont manifestes"] },
+      { q: "Le règlement détermine :", c: ["Les contraventions uniquement","Les crimes et les délits","Les crimes uniquement","Les crimes, délits et contraventions"] },
+      { q: "Une infraction est composée :", c: ["Des éléments primaires, secondaires et tertiaires","Des éléments essentiels, optionnels et superficiels","Des éléments légal, matériel et moral","Des éléments qualificatifs, aggravants et atténuants"] },
+      { q: "La loi pénale est rétroactive :", c: ["S'il s'agit d'une loi pénale fiscale","Si elle a été votée par la majorité aux deux tiers du Sénat","S'il s'agit d'une peine plus sévère que celle en cours d'exécution","S'il s'agit d'une loi de procédure"] },
+      { q: "N'est pas responsable pénalement :", c: ["Un agent d'application de la loi","Un mineur de treize ans","Un mineur émancipé","Une personne morale"] },
+      // Section 4 — Droit Pénal Spécial
+      { q: "L'homicide involontaire se distingue du meurtre par :", c: ["Le fruit de l'infraction","L'élément matériel de l'infraction","L'élément moral de l'infraction","Les personnes impliquées par l'infraction"] },
+      { q: "Les violences pénalement répréhensibles :", c: ["Ne sont ni physiques ni psychiques","Sont uniquement physiques","Sont uniquement psychiques","Sont à la fois physiques et psychiques"] },
+      { q: "Détruire un bien qui nous appartient :", c: ["N'est pas pénalement répréhensible","Est toujours pénalement répréhensible","Est pénalement répréhensible si cela crée un risque pour autrui","Est pénalement répréhensible si sa valeur dépasse 10.000 $"] },
+      { q: "Un attroupement est :", c: ["Un rassemblement sur la voie publique qui a été autorisé","Un rassemblement sur la voie publique qui n'a pas été autorisé","Un rassemblement sur la voie publique susceptible de troubler l'ordre public","Un rassemblement sur la voie publique qui trouble l'ordre public"] },
+      { q: "La corruption est punie, entre autres, d'une interdiction de fonctions publiques et d'inéligibilité afin :", c: ["De faire tomber les réseaux criminels","De mieux gérer les fonds publics","De s'assurer une paix politique","De préserver la déontologie des personnes publiques"] }
+    ]
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+const CLOUD_RUN_URL  = "https://sendformwebhook-988970976477.europe-west1.run.app";
+const DUREE_SECONDES = 20 * 60;
+
+let sujetId       = null;
+let sujet         = null;
+let shuffledQ     = [];   // questions dans l'ordre mélangé, avec shuffledChoices et correctShuffledIdx
+let answers       = new Array(20).fill(null); // index choisi (0-3) dans l'ordre mélangé
+let currentPage   = 0;
+let timerInterval = null;
+let secondsLeft   = DUREE_SECONDES;
+let examStarted   = false;
+let submitted     = false;
+let alert2minShown = false;
+
+const proctor = { sorties: [], sortieStart: null, totalHors: 0 };
+
+// ══════════════════════════════════════════════════════════════
+// TIRAGE AU SORT DU SUJET + MÉLANGE
+// ══════════════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function initSujet() {
+  sujetId = Math.random() < 0.5 ? 1 : 2;
+  sujet   = SUJETS[sujetId];
+
+  // Mélange des questions PAR SECTION (on conserve les blocs de 5)
+  const sections = [0,1,2,3].map(s => {
+    const qs = sujet.questions.slice(s*5, s*5+5).map((q, localIdx) => {
+      const globalIdx  = s*5 + localIdx;
+      const correctOrig = sujet.bonnesReponses[globalIdx]; // 1-based
+      // Mélange des choix
+      const choicesIdx  = [0,1,2,3]; // indices originaux
+      const shuffled    = shuffle(choicesIdx);
+      const correctShuffled = shuffled.indexOf(correctOrig - 1); // index dans shuffled (0-based)
+      return {
+        q: q.q,
+        shuffledChoices: shuffled.map(i => q.c[i]),
+        correctShuffledIdx: correctShuffled // 0-based
+      };
+    });
+    return shuffle(qs); // mélange de l'ordre des questions dans la section
+  });
+
+  shuffledQ = sections.flat();
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDU DES QUESTIONS
+// ══════════════════════════════════════════════════════════════
+function renderQuestions() {
+  const containers = ['questions-s1','questions-s2','questions-s3','questions-s4'];
+  containers.forEach((id, sIdx) => {
+    const el  = document.getElementById(id);
+    const off = sIdx * 5;
+    el.innerHTML = shuffledQ.slice(off, off+5).map((q, i) => {
+      const qi = off + i;
+      return `
+        <div class="question-block">
+          <div class="question-num">Question ${qi + 1}</div>
+          <div class="question-text">${q.q}</div>
+          <div class="choices">
+            ${q.shuffledChoices.map((c, ci) => `
+              <label class="choice-label" id="choice-${qi}-${ci}" onclick="selectAnswer(${qi}, ${ci})">
+                <span class="choice-marker"></span>
+                <span>${c}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  });
+}
+
+function selectAnswer(qi, choiceIdx) {
+  answers[qi] = choiceIdx;
+  for (let ci = 0; ci < 4; ci++) {
+    const lbl = document.getElementById(`choice-${qi}-${ci}`);
+    if (lbl) lbl.classList.toggle('selected', ci === choiceIdx);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function goPage(n) {
+  if (submitted) return;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + n).classList.add('active');
+  currentPage = n;
+  const pct = ((n + 1) / 7) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  if (n === 6) buildRecap();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ══════════════════════════════════════════════════════════════
+// DÉMARRAGE
+// ══════════════════════════════════════════════════════════════
+function startExam() {
+  const fields = ['prenom','nom','ddn','lieu','discord','uid','signature'];
+  let valid = true;
+  fields.forEach(f => {
+    const inp = document.getElementById('f-' + f);
+    const err = document.getElementById('err-' + f);
+    if (!inp.value.trim()) {
+      inp.classList.add('error'); err.style.display = 'block'; valid = false;
+    } else {
+      inp.classList.remove('error'); err.style.display = 'none';
+    }
+  });
+  if (!valid) return;
+  examStarted = true;
+  startTimer();
+  startProctoring();
+  goPage(2);
+}
+
+// ══════════════════════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════════════════════
+function startTimer() {
+  const display = document.getElementById('timer-display');
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    const m = Math.floor(secondsLeft / 60);
+    const s = secondsLeft % 60;
+    display.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    if (secondsLeft <= 120 && !alert2minShown) {
+      alert2minShown = true;
+      document.getElementById('alert-2min').style.display = 'block';
+      display.classList.add('warn');
+      setTimeout(() => { document.getElementById('alert-2min').style.display = 'none'; }, 8000);
+    }
+    if (secondsLeft <= 60) { display.classList.remove('warn'); display.classList.add('crit'); }
+    if (secondsLeft <= 0)  { clearInterval(timerInterval); submitExam(true); }
+  }, 1000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROCTORING
+// ══════════════════════════════════════════════════════════════
+function startProctoring() {
+  document.addEventListener('visibilitychange', () => { document.hidden ? onLeave() : onReturn(); });
+  window.addEventListener('blur',  onLeave);
+  window.addEventListener('focus', onReturn);
+}
+
+function onLeave() {
+  if (!examStarted || submitted || proctor.sortieStart) return;
+  proctor.sortieStart = Date.now();
+  document.getElementById('proctor-overlay').classList.add('show');
+}
+
+function onReturn() {
+  if (!proctor.sortieStart) return;
+  const duree = Date.now() - proctor.sortieStart;
+  proctor.totalHors += duree;
+  proctor.sorties.push({ timestamp: new Date(proctor.sortieStart).toLocaleTimeString('fr-FR'), duree: Math.round(duree/1000) });
+  proctor.sortieStart = null;
+}
+
+function dismissProctor() {
+  document.getElementById('proctor-overlay').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════════════
+// RÉCAPITULATIF
+// ══════════════════════════════════════════════════════════════
+function buildRecap() {
+  const unanswered = answers.filter(a => a === null).length;
+  document.getElementById('warn-unanswered').style.display = unanswered > 0 ? 'block' : 'none';
+
+  let html = '';
+  for (let s = 0; s < 4; s++) {
+    html += `<div class="section-recap-label">${sujet.sections[s]}</div><div class="summary-grid">`;
+    for (let i = 0; i < 5; i++) {
+      const qi  = s*5 + i;
+      const ans = answers[qi];
+      const txt = ans !== null ? shuffledQ[qi].shuffledChoices[ans] : 'Sans réponse';
+      html += `<div class="summary-item">
+        <div class="summary-item-label">Q${qi+1} — ${shuffledQ[qi].q.substring(0,40)}…</div>
+        <div class="summary-item-value ${ans === null ? 'missing' : ''}">${txt}</div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  document.getElementById('recap-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CALCUL DES SCORES
+// ══════════════════════════════════════════════════════════════
+function computeScores() {
+  const s = [0,0,0,0];
+  for (let i = 0; i < 20; i++) {
+    if (answers[i] !== null && answers[i] === shuffledQ[i].correctShuffledIdx) {
+      s[Math.floor(i/5)]++;
+    }
+  }
+  return { s1:s[0], s2:s[1], s3:s[2], s4:s[3], total: s.reduce((a,b)=>a+b,0) };
+}
+
+// ══════════════════════════════════════════════════════════════
+// SOUMISSION
+// ══════════════════════════════════════════════════════════════
+function submitExam(auto) {
+  if (submitted) return;
+  submitted = true;
+  clearInterval(timerInterval);
+
+  if (proctor.sortieStart) {
+    const duree = Date.now() - proctor.sortieStart;
+    proctor.totalHors += duree;
+    proctor.sorties.push({ timestamp: new Date(proctor.sortieStart).toLocaleTimeString('fr-FR'), duree: Math.round(duree/1000) });
+    proctor.sortieStart = null;
+  }
+
+  const scores = computeScores();
+  const info = {
+    prenom:    document.getElementById('f-prenom').value.trim(),
+    nom:       document.getElementById('f-nom').value.trim().toUpperCase(),
+    discord:   document.getElementById('f-discord').value.trim(),
+    uid:       document.getElementById('f-uid').value.trim(),
+  };
+
+  const tempsTotal = DUREE_SECONDES - secondsLeft;
+  const mm = Math.floor(tempsTotal/60), ss = tempsTotal%60;
+
+  // ── Embed 1 : résultats ──────────────────────────────────
+  const embed1 = {
+    title:       "📋 Copie d'examen écrit remise",
+    description: `**${sujet.nomExamen}**${auto ? '\n⏱ *Soumission automatique à l\'expiration du temps*' : ''}`,
+    color: 3447003,
+    fields: [
+      { name: '👤 Répondant',         value: `${info.prenom} ${info.nom}`,  inline: false },
+      { name: '🆔 ID Discord',         value: info.discord || 'N/R',         inline: true  },
+      { name: '⚙️ ID Unique',          value: info.uid     || 'N/R',         inline: true  },
+      { name: '\u200b',                value: '\u200b',                       inline: true  },
+      { name: sujet.sections[0],       value: `${scores.s1}/5`,              inline: true  },
+      { name: sujet.sections[1],       value: `${scores.s2}/5`,              inline: true  },
+      { name: sujet.sections[2],       value: `${scores.s3}/5`,              inline: true  },
+      { name: sujet.sections[3],       value: `${scores.s4}/5`,              inline: true  },
+      { name: '🧮 Note globale',       value: `**${scores.total}/20**`,      inline: false },
+    ],
+    timestamp: new Date().toISOString(),
+    footer: { text: 'Université de San Andreas • Mastère de Droit' }
+  };
+
+  // ── Embed 2 : rapport de proctoring ─────────────────────
+  const nbSorties    = proctor.sorties.length;
+  const totalHorsSec = Math.round(proctor.totalHors/1000);
+  const totalHorsFmt = `${Math.floor(totalHorsSec/60)}m ${totalHorsSec%60}s`;
+  let detailSorties  = nbSorties === 0
+    ? 'Aucune sortie détectée ✅'
+    : proctor.sorties.slice(0,10).map((s,i) => `• Sortie ${i+1} à ${s.timestamp} — ${s.duree}s`).join('\n');
+  if (proctor.sorties.length > 10) detailSorties += `\n*…et ${proctor.sorties.length-10} autre(s)*`;
+
+  const proctorColor = nbSorties === 0 ? 3066993 : nbSorties <= 2 ? 15105570 : 15158332;
+
+  const embed2 = {
+    title: '🔍 Rapport de surveillance',
+    color: proctorColor,
+    fields: [
+      { name: '👤 Candidat',           value: `${info.prenom} ${info.nom}`,  inline: false },
+      { name: '⏱ Temps utilisé',       value: `${mm}m ${ss}s / 20m`,         inline: true  },
+      { name: '🚪 Sorties de fenêtre', value: `${nbSorties}`,                 inline: true  },
+      { name: '⏳ Temps hors fenêtre', value: totalHorsFmt,                   inline: true  },
+      { name: '📋 Détail des sorties', value: detailSorties,                  inline: false },
+    ],
+    timestamp: new Date().toISOString(),
+    footer: { text: `Soumission ${auto ? 'automatique' : 'manuelle'} · Université de San Andreas` }
+  };
+
+  fetch(CLOUD_RUN_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ webhook_key: sujet.webhookKey, discord_payload: { embeds: [embed1, embed2] } })
+  }).catch(err => console.error('Erreur envoi:', err));
+
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  document.querySelector('.container').innerHTML = `
+    <div id="page-sent">
+      <div class="sent-icon">✅</div>
+      <h2>Copie remise</h2>
+      <p>Votre examen a bien été transmis. Vous pouvez fermer cette fenêtre.</p>
+      ${auto ? '<p style="color:var(--danger);margin-top:0.5rem;">⏱ Soumission automatique — le temps imparti était écoulé.</p>' : ''}
+    </div>`;
+  document.getElementById('progress-bar').style.width = '100%';
+}
+
+// ══════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════
+initSujet();
+renderQuestions();
+</script>
+</body>
+</html>
